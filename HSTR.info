@@ -1,0 +1,18 @@
+hstr
+
+HSTR is a command line utility that brings improved BASH command completion from the history. It aims to make completion easier and more efficient than Ctrl-r.
+Apart to the completion, history can be managed (you can remove commands that e.g. contain sensitive information like passwords) and bookmark your favorite commands.
+Install - htsr on Debian
+1.	Open the terminal and run the following commands
+#wget www.clfh.de/frankh.asc
+#apt-key add frankh.asc
+2. adding the repository to /etc/apt/sources.list
+deb http://www.clfh.de/debian wheezy main
+deb-src http://www.clfh.de/debian wheezy main
+ Save and exit the file
+3. Update source list
+#apt-get update
+4. Install hstr using the following command
+#apt-get install hh
+Optionally configure hh:
+#hh --show-configuration >> ~/.bashrc

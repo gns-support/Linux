@@ -1,0 +1,205 @@
+
+Ansible  
+Ansible is a powerful automation tool that you can learn quickly.
+Ansible
+Ansible is a radically simple IT automation system. It handles configuration-management, application deployment, cloud provisioning, ad-hoc task-execution, and multinode orchestration - including trivializing things like zero downtime rolling updates with load balancers.
+Read the documentation and more at http://ansible.com/
+Many users run straight from the development branch (it's generally fine to do so), but you might also wish to consume a release.
+
+very Usefull Links:
+How Ansible work
+Ansible Galaxy
+Get Start with Ansible
+Ansible Documentation
+
+
+
+
+Installation instruction for deploy ansible server on Centos 6.3
+
+First, let’s set up SSH-agent so it can remember our credentials:
+$ ssh-agent bash
+$ ssh-add ~/.ssh/id_rsa
+On a Linux Control Machine:
+Pre-requirements for running Ansible 
+Explanation:
+Windows support relies on a few standard variables to indicate the username, password, and connection type (windows) of the remote hosts. These variables are most easily set up in inventory. This is used instead of SSH-keys or passwords as normally fed into Ansible:
+[windows]
+winserver1.example-domain.com
+winserver2.example-domain.com
+So will need to run the following command on Linuc Control Machine 
+% pip install http://github.com/diyan/pywinrm/archive/master.zip#egg=pywinrm
+Another package which will require is:
+pywinrm -  is a Python client for Windows Remote Management (WinRM). 
+This allows you to invoke commands on target Windows machines from any machine that can run Python.
+WinRM allows you to call native objects in Windows. These include, but are not limited to, running batch scripts, powershell scripts and fetching WMI variables. For more information on WinRM, please visit
+Microsoft's WinRM site.
+
+If you wish to connect to domain accounts published through Active Directory (as opposed to local accounts created on the remote host):
+
+will need to do also: 
+%pip install kerberos
+
+
+
+In group_vars/windows.yml, define the following inventory variables:
+# it is suggested that these be encrypted with ansible-vault:
+# ansible-vault edit group_vars/windows.yml
+
+ansible_ssh_user: Administrator
+ansible_ssh_pass: SecretPasswordGoesHere
+ansible_ssh_port: 5986
+ansible_connection: winrm
+
+
+
+
+
+
+Ansible CLI commands which used for IT tasks
+
+
+
+1.	Check availability of exist host configuration
+
+% ansible host/group/all -m ping
+
+2. Configuration set information in JSON format
+% ansible host/group/all -m setup
+
+3. Create LVM volume example
+% ansible host/group/all -m lvol -a "vg=examplegroup lv=examplevolume size=1024 state=present"
+
+4. Run ansible playbook scenario yaml file
+% ansible-playbook <name_of_playbook.yml> ... [?????? ?????????]
+
+5. Check service http run and started
+% ansible host/group/all -m service -a "name=httpd state=started"
+
+6. Run example some command in shell
+%ansible host/group/all -m command -a "/sbin/reboot -t now"
+
+7.Add Windows user example via Ansible command line
+$ ansible -i hosts -m win_user -a "name=bob password=Password12345 groups=Users" all
+$ ansible -i hosts -m win_user -a "name=bob state=absent" all
+
+8.Run the command on all servers in a group, in this case, all, in 10 parallel forks:
+$ ansible host/group/all -a "/sbin/reboot" -f 10
+9. Transfer example a file directly to many servers:
+$ ansible host/group/all -m copy -a "src=/etc/hosts dest=/tmp/hosts"
+
+
+10. Changing ownership and permissions on files. 
+These same options can be passed directly to the copymodule as well:
+$ ansible host/group/all -m file -a "dest=/srv/foo/a.txt mode=600"
+$ ansible host/group/all -m file -a "dest=/srv/foo/b.txt mode=600 owner=mdehaan group=mdehaan"
+11. The file module can also create directories, similar to mkdir -p:
+$ ansible host/group/all -m file -a "dest=/path/to/c mode=755 owner=apache group=apache state=directory"
+12.Delete directories (recursively) and delete files:
+$ ansible host/group/all  -m file -a "dest=/path/to/c state=absent"
+
+13. Ensure a package is installed, but don’t update it:
+$ ansible  host/group/all -m yum -a "name=httpd state=present"
+14. Ensure a package is installed to a specific version:
+$ ansible all -m yum -a "name=acme-1.5 state=present"
+15  Ensure a package is installed to a specific version:
+$ ansible all -m yum -a "name=acme-1.5 state=present"
+
+16. Ensure a package is at the latest version:
+$ ansible all -m yum -a "name=httpd state=latest"
+
+17. Ensure a package is not installed:
+$ ansible webservers -m yum -a "name=httpd state=absent"
+Creation and manipulation of existing user accounts 
+
+18. Removal of user accounts that may exist:
+$ ansible all -m user -a "name=foo password=<crypted password here>"
+
+$ ansible all -m user -a "name=foo state=absent"
+19. Deploy your webapp straight from git:
+$ ansible webservers -m git -a "repo=git://foo.example.org/repo.git dest=/srv/myapp version=HEAD"
+SERVCES manipulation:
+20.Ensure a service is started on all:
+$ ansible all -m service -a "name=httpd state=started"
+
+21. Alternatively, restart a service on all:
+$ ansible all -m service -a "name=httpd state=restarted"
+
+22.Ensure a service is stopped:
+$ ansible all -m service -a "name=httpd state=stopped"
+
+
+From playbooks documentation Ansible modules are executed in a very similar way:
+- name: reboot the servers
+  action: command /sbin/reboot -t now
+
+Which can be abbreviated to:
+- name: reboot the servers
+  command: /sbin/reboot -t now
+
+Another Playbook examples
+
+Ensure NTP have last version and install if need and restart NTP service 
+---
+- hosts: all
+  tasks:
+    - name: ensure ntpd is at the latest version
+      yum: pkg=ntp state=latest
+      notify:
+      - restart ntpd
+  handlers:
+    - name: restart ntpd
+      service: name=ntpd state=restarted
+
+
+
+Run Ansible or Ansible-Playbook from Rundeck example
+
+gistfile.sh
+
+
+#!/bin/bash
+# Interpret whether the input needs to go to ansible, or ansible-playbook and run appropriately
+# First update the git repos for each project
+/usr/bin/update-git-repos
+export ANSIBLE_FORCE_COLOR=1
+export ANSIBLE_RETRY_FILES_ENABLED=False
+USER=root
+echo Command line given was:
+echo $0 $@
+echo Rundeck project is $RD_JOB_PROJECT
+REGEX=".*.yml"
+if [[ $2 =~ $REGEX ]]; then
+ COMMAND=ansible-playbook
+ ARGS=" $2 -i /etc/ansible/hosts/$RD_JOB_PROJECT -u $3 -vv --limit=$1 $4 $5 $6 $7"
+else
+ COMMAND=ansible
+ ARGS=" $1 -i /etc/ansible/hosts/$RD_JOB_PROJECT --user=$USER --module-name=$2 --args=\"$3 $4 $5 $6 $7 $8 $9\""
+ if [ $3 == "rm" ]; then
+  echo RM commands are disabled.
+  exit 1
+ fi
+fi
+echo Running $COMMAND $ARGS
+eval $COMMAND $ARGS
+
+
+
+Vagrant and Ansible
+Vagrant is a tool to manage virtual machine environments, and allows you to configure and use reproducible work environments on top of various virtualization and cloud platforms.
+SETUP REQUIREMENTS for Vagrant Installation 
+?	Install Ansible on your Vagrant host.
+?	Your Vagrant host should ideally provide a recent version of OpenSSH thatsupports ControlPersist
+
+create a Vagrantfile and customize it to suit your needs. This is covered in detail in the Vagrant documentation, but here is a quick example:
+$ mkdir vagrant-test
+$ cd vagrant-test
+$ vagrant init precise32 http://files.vagrantup.com/precise32.box
+To re-run a playbook on an existing VM, just run:
+$ vagrant provision
+Here is an example:
+$ ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory --private-key=.vagrant/machines/default/virtualbox/private_key -u vagrant playbook.yml
+
+
+
+
